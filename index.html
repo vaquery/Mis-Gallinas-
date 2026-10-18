@@ -89,6 +89,16 @@ button { width: 100%; padding: 14px; background: linear-gradient(180deg, #d98225
 .nube-bar span { overflow-wrap:anywhere; }
 .nube-bar button { width:auto; margin:0; padding:8px 12px; font-size:14px; flex-shrink:0; }
 
+.pend-bar { margin:-5px 0 15px; padding:9px 12px; border-radius:12px; background:#fff3d6; border:1px solid #e9b858; font-size:14px; color:#7a4a05; cursor:pointer; line-height:1.4; }
+.badge { display:inline-block; font-size:11px; font-weight:bold; padding:2px 7px; border-radius:999px; background:#fde8b0; color:#8a5200; margin-left:6px; vertical-align:middle; }
+.mini { width:auto; margin:0; padding:7px 11px; font-size:13px; border-radius:8px; background:#15803d; box-shadow:none; flex-shrink:0; }
+.pend-cli { padding:12px 0; border-bottom:1px solid #f0dfbf; }
+.pend-cli:last-child { border-bottom:none; }
+.pend-head { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
+.pend-line { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:5px 0; font-size:14px; }
+.pend-line small { color:#6b7280; }
+#modalMsg { white-space: pre-line; }
+
 /* Gallinitas decorativas */
 .gallina-paseante {
   position: fixed; z-index: 999; left: -90px; bottom: 16px;
@@ -135,6 +145,10 @@ button { width: 100%; padding: 14px; background: linear-gradient(180deg, #d98225
   <div class="box"><small>Gastos</small><div class="num" id="tGastos" style="color:#ef4444;">0,00 €</div></div>
   <div class="box"><small>Balance</small><div class="num" id="tBalance">0,00 €</div></div>
 </div>
+<div class="pend-bar" id="barraPend" style="display:none;" onclick="document.getElementById('cardPend').scrollIntoView({behavior:'smooth'})">
+  ⏳ <strong>Pendiente de cobro: <span id="tPend"></span></strong><br>
+  <small id="tPendDoc"></small> · no está incluido en Ventas ni en Balance hasta que lo cobres. Toca para ver el detalle.
+</div>
 
 <div class="card" id="cardVenta">
   <h2 id="tituloVenta">🥚 Nueva Venta</h2>
@@ -155,6 +169,15 @@ button { width: 100%; padding: 14px; background: linear-gradient(180deg, #d98225
   </div>
   <label for="vTotal">Total a cobrar (€)</label>
   <input type="number" step="any" min="0" inputmode="decimal" id="vTotal" placeholder="0.00" style="background:#f3f4f6;font-weight:bold;">
+  <label for="vEstado">Estado del cobro</label>
+  <select id="vEstado" onchange="cambioEstado()">
+    <option value="pagado">✅ Pagado</option>
+    <option value="pendiente">⏳ Pendiente de pagar</option>
+  </select>
+  <div id="wrapFechaCobro" style="display:none;">
+    <label for="vFechaCobro">Fecha de cobro</label>
+    <input type="date" id="vFechaCobro">
+  </div>
   <button type="button" id="btnVenta" onclick="registrarVenta()">Registrar Venta</button>
   <button type="button" class="btn-cancelar" id="cancelVenta" style="display:none;" onclick="cancelarEdicion()">Cancelar edición</button>
 </div>
@@ -164,18 +187,21 @@ button { width: 100%; padding: 14px; background: linear-gradient(180deg, #d98225
   <label for="gFecha">Fecha</label>
   <input type="date" id="gFecha">
   <label for="gTipo">Tipo de gasto</label>
-  <select id="gTipo">
-    <option value="Pienso">Pienso</option>
-    <option value="Fruta">Fruta</option>
-    <option value="Verdura">Verdura</option>
-    <option value="Gasolina">Gasolina</option>
-    <option value="Viruta de madera">Viruta de madera</option>
-    <option value="Otro">Otro</option>
-  </select>
+  <select id="gTipo" onchange="cambioTipoGasto()"></select>
+  <div id="wrapNombreGasto" style="display:none;">
+    <label for="gNombre">Nombre del gasto</label>
+    <input type="text" id="gNombre" maxlength="40" placeholder="Ej: Bebedero nuevo" autocomplete="off">
+  </div>
+  <button type="button" class="btn-secundario" id="btnRenombrar" style="display:none;margin-top:10px;padding:10px;font-size:14px;" onclick="renombrarTipo()">✏️ Renombrar este tipo en todos los gastos</button>
   <label for="gImporte">Importe (€)</label>
   <input type="number" step="any" min="0" inputmode="decimal" id="gImporte" placeholder="Ej: 15.00">
   <button type="button" class="btn-gasto" id="btnGasto" onclick="registrarGasto()">Registrar Gasto</button>
   <button type="button" class="btn-cancelar" id="cancelGasto" style="display:none;" onclick="cancelarEdicion()">Cancelar edición</button>
+</div>
+
+<div class="card" id="cardPend" style="display:none;">
+  <h2>⏳ Pendiente de cobro</h2>
+  <div id="listaPend"></div>
 </div>
 
 <div class="card">
@@ -206,6 +232,7 @@ button { width: 100%; padding: 14px; background: linear-gradient(180deg, #d98225
 <div id="modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;align-items:center;justify-content:center;padding:20px;">
   <div style="background:#fffdf5;border-radius:14px;padding:18px;max-width:340px;width:100%;box-shadow:0 10px 30px rgba(0,0,0,.4);">
     <p id="modalMsg" style="margin:0 0 6px;line-height:1.45;"></p>
+    <input type="text" id="modalInput" style="display:none;">
     <div class="row2">
       <div><button type="button" class="btn-cancelar" id="modalNo">Cancelar</button></div>
       <div><button type="button" id="modalSi">Aceptar</button></div>
@@ -267,6 +294,11 @@ function normalizar(x) {
     }
     o.docenas = Number.isFinite(docenas) && docenas > 0 ? docenas : 0;
     o.regalo = o.regalo === true || /REGALO/.test(o.desc);
+    // Ventas anteriores a esta versión no tienen estado: se consideran cobradas.
+    o.pagado = o.regalo ? true : x.pagado !== false;
+    o.fechaPago = o.pagado ? (o.fechaPago || o.fecha) : '';
+  } else {
+    o.gasto = String(o.gasto || o.desc.replace(/^Gasto:\s*/, '')).trim();
   }
   return o;
 }
@@ -339,8 +371,14 @@ function leerVenta() {
     aviso('El total no es válido. Comprueba el precio y el importe.');
     return null;
   }
+  const pagado = regalo || document.getElementById('vEstado').value === 'pagado';
+  let fechaPago = '';
+  if (pagado) {
+    const fc = document.getElementById('vFechaCobro').value;
+    fechaPago = (editando && fc) ? fc : fecha;
+  }
   return {
-    tipo: 'v', fecha, cliente, docenas, precio, regalo,
+    tipo: 'v', fecha, cliente, docenas, precio, regalo, pagado, fechaPago,
     desc: regalo ? `${cliente} (${docenas} doc.) — REGALO` : `${cliente} (${docenas} doc.)`,
     monto: Number(total.toFixed(2))
   };
@@ -352,7 +390,7 @@ function registrarVenta() {
   const terminar = () => {
     guardarMovimiento(datos);
     resetFormVenta();
-    toast(datos.regalo ? '🎁 Regalo registrado' : '✅ Venta registrada');
+    toast(datos.regalo ? '🎁 Regalo registrado' : (datos.pagado ? '✅ Venta registrada' : '⏳ Venta anotada como pendiente de cobro'));
   };
   if (datos.regalo) {
     preguntar(`Vas a regalar ${datos.docenas} docena(s) a ${datos.cliente}. El importe será 0,00 € y aparecerá como REGALO. ¿Quieres continuar?`, terminar);
@@ -363,13 +401,146 @@ function registrarVenta() {
 
 function registrarGasto() {
   const fecha = document.getElementById('gFecha').value;
-  const tipo = document.getElementById('gTipo').value;
+  let tipo = document.getElementById('gTipo').value;
   const importe = parseFloat(document.getElementById('gImporte').value);
   if (!fecha) { aviso('Indica la fecha del gasto'); return; }
   if (!Number.isFinite(importe) || importe <= 0) { aviso('Indica un importe válido'); return; }
+  if (tipo === '__otro__') {
+    const n = document.getElementById('gNombre').value.trim().replace(/\s+/g, ' ').slice(0, 40);
+    if (!n) { aviso('Escribe el nombre del gasto'); return; }
+    if (minus(n) === 'otro') { aviso('Ponle un nombre más concreto que "Otro"'); return; }
+    tipo = nombreGastoCanonico(n);
+  }
   guardarMovimiento({ tipo: 'g', fecha, gasto: tipo, desc: `Gasto: ${tipo}`, monto: Number(importe.toFixed(2)) });
-  resetFormGasto();
+  resetFormGasto(tipo);
   toast('✅ Gasto registrado');
+}
+
+/* ---------- Tipos de gasto con nombre propio ----------
+   Los nombres nuevos no se guardan aparte: salen de los propios gastos, así que
+   se sincronizan solos entre dispositivos. */
+const TIPOS_BASE = ['Pienso', 'Fruta', 'Verdura', 'Gasolina', 'Viruta de madera'];
+function minus(s) { return String(s || '').trim().toLocaleLowerCase('es'); }
+function tiposPersonalizados() {
+  const vistos = new Map();
+  vivos().forEach(x => {
+    if (x.tipo !== 'g') return;
+    const n = String(x.gasto || '').trim();
+    const k = minus(n);
+    if (!n || k === 'otro' || TIPOS_BASE.some(b => minus(b) === k) || vistos.has(k)) return;
+    vistos.set(k, n);
+  });
+  return Array.from(vistos.values()).sort((a, b) => a.localeCompare(b, 'es'));
+}
+function nombreGastoCanonico(n) {
+  const k = minus(n);
+  const base = TIPOS_BASE.find(b => minus(b) === k);
+  if (base) return base;
+  const existente = tiposPersonalizados().find(t => minus(t) === k);
+  if (existente) return existente;
+  return n.charAt(0).toLocaleUpperCase('es') + n.slice(1);
+}
+function esPersonalizado(v) { return !!v && v !== '__otro__' && !TIPOS_BASE.includes(v); }
+function refrescarTiposGasto() {
+  const sel = document.getElementById('gTipo');
+  const actual = sel.value;
+  const op = (v, t) => `<option value="${esc(v)}">${esc(t)}</option>`;
+  sel.innerHTML = TIPOS_BASE.map(t => op(t, t)).join('')
+    + tiposPersonalizados().map(t => op(t, '⭐ ' + t)).join('')
+    + op('__otro__', '➕ Otro (escribir nombre)');
+  sel.value = Array.from(sel.options).some(o => o.value === actual) ? actual : TIPOS_BASE[0];
+  cambioTipoGasto();
+}
+function cambioTipoGasto() {
+  const v = document.getElementById('gTipo').value;
+  document.getElementById('wrapNombreGasto').style.display = v === '__otro__' ? 'block' : 'none';
+  document.getElementById('btnRenombrar').style.display = esPersonalizado(v) ? 'block' : 'none';
+}
+function renombrarTipo() {
+  const viejo = document.getElementById('gTipo').value;
+  if (!esPersonalizado(viejo)) return;
+  pedirDato(`Nuevo nombre para «${viejo}».\nSe cambiará en todos los gastos que lo usan.`, 'text', viejo, texto => {
+    const n = texto.replace(/\s+/g, ' ').slice(0, 40);
+    if (minus(n) === 'otro') { aviso('Ponle un nombre más concreto que "Otro"'); return; }
+    const nuevo = minus(n) === minus(viejo) ? n.charAt(0).toLocaleUpperCase('es') + n.slice(1) : nombreGastoCanonico(n);
+    const ahora = Date.now();
+    let cont = 0;
+    db.forEach(x => {
+      if (x.tipo === 'g' && !x.del && minus(x.gasto) === minus(viejo)) {
+        x.gasto = nuevo; x.desc = `Gasto: ${nuevo}`; x.upd = ahora; subir(x); cont++;
+      }
+    });
+    actualizar();
+    document.getElementById('gTipo').value = nuevo;
+    cambioTipoGasto();
+    toast(`✏️ Renombrado en ${cont} gasto(s)`);
+  });
+}
+
+/* ---------- Cobros pendientes ---------- */
+function cambioEstado() {
+  const pag = document.getElementById('vEstado').value === 'pagado';
+  const it = editando ? db.find(x => x.id === editando) : null;
+  const mostrar = !!(it && it.tipo === 'v' && pag);
+  const f = document.getElementById('vFechaCobro');
+  document.getElementById('wrapFechaCobro').style.display = mostrar ? 'block' : 'none';
+  if (mostrar && !f.value) f.value = hoyLocal();
+}
+function marcarCobrado(it, fecha) {
+  it.pagado = true; it.fechaPago = fecha; it.upd = Date.now(); subir(it);
+}
+function cobrar(id) {
+  const it = db.find(x => x.id === id);
+  if (!it || it.del) return;
+  pedirDato(`¿Qué día te han pagado?\n${it.desc} · ${euros(it.monto)}`, 'date', hoyLocal(), fecha => {
+    marcarCobrado(it, fecha);
+    ultimoId = it.id;
+    actualizar();
+    toast('💰 Cobro registrado');
+  });
+}
+function cobrarCliente(clave) {
+  const pend = vivos().filter(x => x.tipo === 'v' && !x.pagado && minus(x.cliente || '(sin nombre)') === clave);
+  if (!pend.length) return;
+  const total = pend.reduce((s, x) => s + x.monto, 0);
+  pedirDato(`${pend[0].cliente || 'Cliente'} paga ${pend.length} venta(s) por ${euros(total)}.\n¿Qué día te han pagado?`, 'date', hoyLocal(), fecha => {
+    pend.forEach(x => marcarCobrado(x, fecha));
+    actualizar();
+    toast('💰 ' + euros(total) + ' cobrados');
+  });
+}
+function actualizarPendientes() {
+  const pend = vivos().filter(x => x.tipo === 'v' && !x.pagado);
+  const bar = document.getElementById('barraPend');
+  const card = document.getElementById('cardPend');
+  if (!pend.length) { bar.style.display = 'none'; card.style.display = 'none'; return; }
+  bar.style.display = 'block'; card.style.display = 'block';
+  const total = pend.reduce((s, x) => s + x.monto, 0);
+  const doc = pend.reduce((s, x) => s + (x.docenas || 0), 0);
+  document.getElementById('tPend').textContent = euros(total);
+  document.getElementById('tPendDoc').textContent = `${formatoNumero(doc)} docenas (${formatoNumero(doc * 12)} huevos)`;
+
+  const grupos = new Map();
+  pend.forEach(x => {
+    const nombre = x.cliente || '(sin nombre)';
+    const k = minus(nombre);
+    const g = grupos.get(k) || { k, nombre, items: [], total: 0, doc: 0 };
+    g.items.push(x); g.total += x.monto; g.doc += x.docenas || 0;
+    grupos.set(k, g);
+  });
+  let html = '';
+  Array.from(grupos.values()).sort((a, b) => b.total - a.total).forEach(g => {
+    g.items.sort((a, b) => a.fecha.localeCompare(b.fecha));
+    html += `<div class="pend-cli">
+      <div class="pend-head"><strong>${esc(g.nombre)}</strong><strong style="color:#d97706;white-space:nowrap;">${euros(g.total)}</strong></div>
+      <div class="stat-note">${formatoNumero(g.doc)} docenas (${formatoNumero(g.doc * 12)} huevos) · desde el ${esc(fechaCorta(g.items[0].fecha))}</div>`;
+    g.items.forEach(x => {
+      html += `<div class="pend-line"><span><small>${esc(fechaCorta(x.fecha))}</small> · ${formatoNumero(x.docenas)} doc. · ${euros(x.monto)}</span>
+        <button type="button" class="mini" data-id="${esc(x.id)}" onclick="cobrar(this.dataset.id)">Cobrar</button></div>`;
+    });
+    html += `<button type="button" class="mini" style="width:100%;margin-top:8px;padding:10px;" data-cli="${esc(g.k)}" onclick="cobrarCliente(this.dataset.cli)">💰 Cobrar todo (${euros(g.total)})</button></div>`;
+  });
+  document.getElementById('listaPend').innerHTML = html;
 }
 
 function guardarMovimiento(datos) {
@@ -394,11 +565,17 @@ function resetFormVenta() {
   document.getElementById('vTotal').value = '';
   document.getElementById('vPrecio').value = '3';
   document.getElementById('vFecha').value = hoyLocal();
+  document.getElementById('vEstado').value = 'pagado';
+  document.getElementById('vFechaCobro').value = '';
   modoEdicion(false);
 }
-function resetFormGasto() {
+function resetFormGasto(tipo) {
   document.getElementById('gImporte').value = '';
+  document.getElementById('gNombre').value = '';
   document.getElementById('gFecha').value = hoyLocal();
+  const sel = document.getElementById('gTipo');
+  if (tipo && Array.from(sel.options).some(o => o.value === tipo)) sel.value = tipo;
+  cambioTipoGasto();
   modoEdicion(false);
 }
 function modoEdicion(si, tipo) {
@@ -409,6 +586,7 @@ function modoEdicion(si, tipo) {
   document.getElementById('tituloGasto').textContent = g ? '✏️ Editar gasto' : '💸 Nuevo Gasto';
   document.getElementById('btnGasto').textContent = g ? 'Guardar cambios' : 'Registrar Gasto';
   document.getElementById('cancelGasto').style.display = g ? 'block' : 'none';
+  cambioEstado();
 }
 function cancelarEdicion() {
   editando = null;
@@ -429,13 +607,23 @@ function editar(id) {
       : (it.regalo ? 0 : (it.docenas > 0 ? Number((it.monto / it.docenas).toFixed(2)) : 3));
     document.getElementById('vPrecio').value = precio;
     document.getElementById('vTotal').value = it.monto.toFixed(2);
+    document.getElementById('vEstado').value = it.pagado ? 'pagado' : 'pendiente';
+    document.getElementById('vFechaCobro').value = it.fechaPago || '';
     modoEdicion(true, 'v');
     document.getElementById('cardVenta').scrollIntoView({ behavior: 'smooth', block: 'start' });
   } else {
     document.getElementById('gFecha').value = it.fecha;
-    const tipo = it.gasto || String(it.desc).replace(/^Gasto:\s*/, '');
+    refrescarTiposGasto();
+    const tipo = String(it.gasto || '').trim();
     const sel = document.getElementById('gTipo');
-    sel.value = Array.from(sel.options).some(o => o.value === tipo) ? tipo : 'Otro';
+    if (tipo && tipo !== 'Otro' && Array.from(sel.options).some(o => o.value === tipo)) {
+      sel.value = tipo;
+      document.getElementById('gNombre').value = '';
+    } else {
+      sel.value = '__otro__';
+      document.getElementById('gNombre').value = tipo === 'Otro' ? '' : tipo;
+    }
+    cambioTipoGasto();
     document.getElementById('gImporte').value = it.monto.toFixed(2);
     modoEdicion(true, 'g');
     document.getElementById('cardGasto').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -462,11 +650,31 @@ function aviso(msg) { toast(msg, null, null, 6000); }
 /* Confirmación propia (no depende de confirm(), que algunos visores bloquean). */
 function preguntar(msg, siAcepta) {
   const m = document.getElementById('modal');
+  const inp = document.getElementById('modalInput');
   document.getElementById('modalMsg').textContent = msg;
+  inp.style.display = 'none';
   m.style.display = 'flex';
   const cerrar = () => { m.style.display = 'none'; };
   document.getElementById('modalSi').onclick = () => { cerrar(); siAcepta(); };
   document.getElementById('modalNo').onclick = cerrar;
+}
+
+/* Como preguntar(), pero pide un dato (texto o fecha). */
+function pedirDato(msg, tipo, valor, siAcepta) {
+  const m = document.getElementById('modal');
+  const inp = document.getElementById('modalInput');
+  document.getElementById('modalMsg').textContent = msg;
+  inp.type = tipo; inp.value = valor || '';
+  inp.style.display = 'block'; inp.style.borderColor = '#d8c7a8';
+  m.style.display = 'flex';
+  const cerrar = () => { m.style.display = 'none'; inp.style.display = 'none'; };
+  document.getElementById('modalSi').onclick = () => {
+    const v = inp.value.trim();
+    if (!v) { inp.style.borderColor = '#dc2626'; return; }
+    cerrar(); siAcepta(v);
+  };
+  document.getElementById('modalNo').onclick = cerrar;
+  if (tipo === 'text') setTimeout(() => { inp.focus(); inp.select(); }, 50);
 }
 
 function toast(msg, textoBoton, accion, ms) {
@@ -507,14 +715,16 @@ function exportarCSV() {
   const datos = vivos().slice().sort((a, b) => a.fecha.localeCompare(b.fecha));
   if (!datos.length) { aviso('Todavía no hay movimientos.'); return; }
   const celda = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
-  const filas = [['Fecha', 'Tipo', 'Cliente', 'Docenas', 'Concepto', 'Importe (€)']];
+  const filas = [['Fecha', 'Tipo', 'Cliente', 'Docenas', 'Concepto', 'Importe (€)', 'Estado', 'Fecha de cobro']];
   datos.forEach(i => filas.push([
     i.fecha,
     i.tipo === 'v' ? (i.regalo ? 'Regalo' : 'Venta') : 'Gasto',
     i.cliente || '',
     i.tipo === 'v' ? String(i.docenas).replace('.', ',') : '',
     i.desc,
-    (i.tipo === 'v' ? '' : '-') + i.monto.toFixed(2).replace('.', ',')
+    (i.tipo === 'v' ? '' : '-') + i.monto.toFixed(2).replace('.', ','),
+    i.tipo === 'v' ? (i.regalo ? 'Regalo' : (i.pagado ? 'Cobrada' : 'Pendiente')) : '',
+    i.tipo === 'v' && i.pagado ? i.fechaPago : ''
   ]));
   const csv = '\uFEFF' + filas.map(f => f.map(celda).join(';')).join('\r\n');
   descargar(`gallinas_${hoyLocal()}.csv`, csv, 'text/csv;charset=utf-8');
@@ -581,13 +791,18 @@ function actualizar() {
 
   let ingresos = 0, gastos = 0, html = '';
   lista.forEach(item => {
-    if (item.tipo === 'v') ingresos += item.monto; else gastos += item.monto;
+    const pendiente = item.tipo === 'v' && !item.pagado;
+    if (item.tipo === 'v') { if (!pendiente) ingresos += item.monto; } else gastos += item.monto;
     const regalo = item.tipo === 'v' && item.regalo;
-    const color = regalo ? '#92400e' : (item.tipo === 'v' ? '#10b981' : '#ef4444');
+    const color = pendiente ? '#d97706' : (regalo ? '#92400e' : (item.tipo === 'v' ? '#10b981' : '#ef4444'));
     const signo = item.tipo === 'v' ? '+' : '-';
-    const importe = regalo ? '🎁 0,00 €' : `${signo}${euros(item.monto)}`;
+    const importe = pendiente ? `⏳ ${euros(item.monto)}` : (regalo ? '🎁 0,00 €' : `${signo}${euros(item.monto)}`);
+    const nota = pendiente
+      ? `<br><button type="button" class="mini" style="margin-top:6px;" onclick="cobrar('${esc(item.id)}')">💰 Marcar cobrado</button>`
+      : ((item.tipo === 'v' && !regalo && item.fechaPago && item.fechaPago !== item.fecha)
+          ? `<br><small>💰 Cobrado el ${esc(fechaCorta(item.fechaPago))}</small>` : '');
     html += `<div class="item${item.id === ultimoId ? ' item-nuevo' : ''}">
-      <div><small>${esc(fechaCorta(item.fecha))}</small><br><strong>${esc(item.desc)}</strong></div>
+      <div><small>${esc(fechaCorta(item.fecha))}</small>${pendiente ? '<span class="badge">PENDIENTE</span>' : ''}<br><strong>${esc(item.desc)}</strong>${nota}</div>
       <div class="acciones">
         <strong style="color:${color};margin-right:4px;white-space:nowrap;">${importe}</strong>
         <button class="icon-btn" type="button" aria-label="Editar movimiento" onclick="editar('${item.id}')">✏️</button>
@@ -606,6 +821,8 @@ function actualizar() {
   document.getElementById('historial').innerHTML = html || '<small style="color:#9ca3af">Sin movimientos</small>';
 
   actualizarClientes();
+  refrescarTiposGasto();
+  actualizarPendientes();
   actualizarEstadisticas(lista);
 }
 
@@ -620,8 +837,9 @@ function actualizarEstadisticas(lista) {
   const porCliente = new Map();
   lista.filter(x => x.tipo === 'v' && x.cliente && x.docenas > 0).forEach(x => {
     const clave = x.cliente.toLocaleLowerCase('es');
-    const ant = porCliente.get(clave) || { nombre: x.cliente, docenas: 0 };
+    const ant = porCliente.get(clave) || { nombre: x.cliente, docenas: 0, pendDoc: 0, pendMonto: 0 };
     ant.docenas += x.docenas;
+    if (!x.pagado) { ant.pendDoc += x.docenas; ant.pendMonto += x.monto; }
     porCliente.set(clave, ant);
   });
 
@@ -643,7 +861,7 @@ function actualizarEstadisticas(lista) {
     html += `<div class="stat-row">
       <div class="stat-head"><span class="stat-name">${esc(c.nombre)}</span><span class="stat-number">${formatoNumero(huevos)} huevos</span></div>
       <div class="stat-track"><div class="stat-bar" style="width:${Math.max(2, huevos / maxHuevos * 100)}%"></div></div>
-      <div class="stat-note">${formatoNumero(c.docenas)} docenas en total</div>
+      <div class="stat-note">${formatoNumero(c.docenas)} docenas en total${c.pendDoc > 0 ? ` · ⏳ ${formatoNumero(c.pendDoc)} sin cobrar (${euros(c.pendMonto)})` : ''}</div>
     </div>`;
   });
   cont.innerHTML = html;
