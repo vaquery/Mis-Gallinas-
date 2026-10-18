@@ -41,6 +41,16 @@ h1::after { content: " 🥚 🐔"; }
 .box .num { font-weight: bold; font-size: 16px; }
 label { font-size: 13px; font-weight: bold; color: #4b5563; display: block; margin-top: 10px; }
 input, select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #d8c7a8; border-radius: 9px; box-sizing: border-box; font-size: 16px; background: #fffefa; }
+/* El campo de fecha de algunos móviles ignora el ancho y se sale de la tarjeta: se fuerza igual que los demás. */
+input[type="date"] {
+  -webkit-appearance: none; appearance: none;
+  display: block; width: 100%; min-width: 0; max-width: 100%;
+  height: 44px; line-height: normal; text-align: left;
+  box-sizing: border-box; margin-left: 0; margin-right: 0;
+}
+input[type="date"]::-webkit-date-and-time-value { text-align: left; min-height: 1.2em; }
+input[type="date"]::-webkit-calendar-picker-indicator { margin: 0; padding: 0; }
+.card, .row2 > div { min-width: 0; }
 button { width: 100%; padding: 14px; background: linear-gradient(180deg, #d98225, #a94f0d); color: white; border: none; border-radius: 9px; font-weight: bold; font-size: 16px; margin-top: 15px; cursor: pointer; box-shadow: 0 2px 0 rgba(88,43,10,.2); }
 .btn-gasto { background: #dc2626; }
 .btn-secundario { background: #4b5563; margin-top: 8px; }
