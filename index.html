@@ -703,7 +703,7 @@ try {
     if (!uid) return;
     try {
       const limpio = JSON.parse(JSON.stringify(it));   // quita campos undefined
-      setDoc(doc(fs, 'users', uid, 'movs', it.id), limpio)
+      setDoc(doc(fs, 'libros', 'principal', 'movs', it.id), limpio)
         .catch(e => estado('⚠️ No se pudo subir: ' + (e.code || e.message)));
     } catch (e) { estado('⚠️ No se pudo subir: ' + e.message); }
   }
@@ -744,7 +744,7 @@ try {
     elBtn.textContent = 'Cerrar sesión';
     estado('☁️ Conectando…');
     desuscribir = onSnapshot(
-      collection(fs, 'users', uid, 'movs'),
+      collection(fs, 'libros', 'principal', 'movs'),
       { includeMetadataChanges: true },
       snap => {
         const remotos = snap.docs.map(d => ({ ...d.data(), id: d.id }));
@@ -754,7 +754,7 @@ try {
         else estado('☁️ Sincronizado · ' + (user.email || ''));
       },
       err => estado(err.code === 'permission-denied'
-        ? '⚠️ Sin permiso: revisa las reglas de Firestore'
+        ? '⚠️ Esta cuenta (' + (user.email || '') + ') no tiene acceso. Pide que añadan tu correo.'
         : '⚠️ Error de sincronización: ' + (err.code || err.message))
     );
   });
