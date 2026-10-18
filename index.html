@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mis Gallinas</title>
+<style>
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background:
+    radial-gradient(ellipse at 8% 12%, rgba(255,255,255,.42) 0 5%, transparent 28%),
+    radial-gradient(ellipse at 92% 30%, rgba(255,241,190,.35) 0 8%, transparent 30%),
+    repeating-linear-gradient(90deg, rgba(111,62,22,.10) 0 3px, transparent 3px 90px),
+    linear-gradient(145deg, #8a5a2b 0%, #d7a65d 38%, #f6d99b 72%, #a96c32 100%);
+  background-attachment: fixed;
+  padding: 16px 16px 90px; margin: 0; color: #292116;
+  max-width: 640px; margin-left: auto; margin-right: auto;
+}
+h1 {
+  color: #5b2c0b; text-align: center; margin: 0 0 15px;
+  padding: 22px 12px; border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255,248,220,.97), rgba(235,195,119,.96));
+  border: 3px solid #9a622b;
+  box-shadow: 0 5px 0 rgba(89,48,15,.28), inset 0 0 0 2px rgba(255,255,255,.45);
+  text-shadow: 0 1px 0 #fff2c7;
+}
+h1::before { content: "🐓 🥚 "; }
+h1::after { content: " 🥚 🐔"; }
+.card {
+  background: rgba(255,253,245,.97); padding: 15px; border-radius: 14px;
+  margin-bottom: 15px; border: 1px solid rgba(130,78,30,.24);
+  box-shadow: 0 5px 14px rgba(70,39,12,.22);
+}
+.card h2 { margin: 0 0 4px; font-size: 16px; color: #92400e; padding-bottom: 9px; border-bottom: 1px solid #f0dfbf; }
+.grid { display: flex; justify-content: space-between; text-align: center; margin-bottom: 15px; gap: 6px; }
+.box {
+  background: linear-gradient(160deg, #fffef8, #fff0cf); padding: 12px 6px;
+  border-radius: 12px; flex: 1; min-width: 0; border: 1px solid #e8c995;
+  box-shadow: 0 3px 8px rgba(70,39,12,.18);
+}
+.box .num { font-weight: bold; font-size: 16px; }
+label { font-size: 13px; font-weight: bold; color: #4b5563; display: block; margin-top: 10px; }
+input, select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #d8c7a8; border-radius: 9px; box-sizing: border-box; font-size: 16px; background: #fffefa; }
+button { width: 100%; padding: 14px; background: linear-gradient(180deg, #d98225, #a94f0d); color: white; border: none; border-radius: 9px; font-weight: bold; font-size: 16px; margin-top: 15px; cursor: pointer; box-shadow: 0 2px 0 rgba(88,43,10,.2); }
+.btn-gasto { background: #dc2626; }
+.btn-secundario { background: #4b5563; margin-top: 8px; }
+.btn-cancelar { background: #6b7280; margin-top: 8px; }
+.row2 { display: flex; gap: 8px; }
+.row2 > div { flex: 1; min-width: 0; }
+.item { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #eee; }
+.item small { color: #6b7280; }
+.item strong { overflow-wrap: anywhere; }
+.acciones { display: flex; align-items: center; flex-shrink: 0; }
+.icon-btn { background: none; border: none; box-shadow: none; color: #9ca3af; font-size: 20px; padding: 4px 7px; margin: 0; width: auto; }
+.icon-btn.del { font-size: 24px; }
+.item-nuevo { animation: destello 1.6s ease-out; }
+@keyframes destello { from { background: #fff3c4; } to { background: transparent; } }
+.stat-row { margin: 14px 0; }
+.stat-head { display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-bottom:6px; font-size:14px; }
+.stat-name { font-weight:600; overflow-wrap:anywhere; }
+.stat-number { color:#92400e; font-weight:bold; white-space:nowrap; }
+.stat-track { height:12px; background:#f3f4f6; border-radius:999px; overflow:hidden; }
+.stat-bar { height:100%; background:#d97706; border-radius:999px; min-width:2px; }
+.stat-note { color:#6b7280; font-size:12px; line-height:1.4; }
+.periodo { display:flex; align-items:center; gap:8px; margin-bottom: 12px; }
+.periodo label { margin: 0; white-space: nowrap; }
+.periodo select { margin: 0; padding: 9px; }
+#toast {
+  position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%) translateY(120px);
+  background: #292116; color: #fff; padding: 10px 14px; border-radius: 12px;
+  display: flex; align-items: center; gap: 14px; font-size: 14px; z-index: 1000;
+  transition: transform .25s ease; max-width: 92vw; box-shadow: 0 6px 18px rgba(0,0,0,.35);
+}
+#toast.visible { transform: translateX(-50%) translateY(0); }
+#toast button { width: auto; margin: 0; padding: 6px 10px; background: #f59e0b; color: #292116; box-shadow: none; font-size: 14px; }
+@media (max-width: 360px) { body { padding: 10px 10px 90px; } .box { padding: 8px 3px; } .box .num { font-size: 14px; } }
+
+.nube-bar { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:15px; padding:8px 12px; border-radius:12px; background:rgba(255,253,245,.9); border:1px solid rgba(130,78,30,.24); font-size:14px; }
+.nube-bar span { overflow-wrap:anywhere; }
+.nube-bar button { width:auto; margin:0; padding:8px 12px; font-size:14px; flex-shrink:0; }
+
+/* Gallinitas decorativas */
+.gallina-paseante {
+  position: fixed; z-index: 999; left: -90px; bottom: 16px;
+  font-size: clamp(30px, 5vw, 48px); line-height: 1;
+  pointer-events: none; user-select: none;
+  filter: drop-shadow(0 3px 2px rgba(65, 37, 10, .25));
+  animation: paseo-gallina var(--duracion, 18s) linear forwards;
+  will-change: transform;
+}
+.gallina-paseante .ave { display: inline-block; animation: pasitos .32s ease-in-out infinite alternate; }
+.gallina-paseante.reversa .ave { transform: scaleX(-1); }
+@keyframes paseo-gallina {
+  0% { transform: translateX(0) translateY(0); }
+  12% { transform: translateX(12vw) translateY(-3px); }
+  25% { transform: translateX(25vw) translateY(0); }
+  38% { transform: translateX(38vw) translateY(-4px); }
+  50% { transform: translateX(50vw) translateY(0); }
+  63% { transform: translateX(63vw) translateY(-3px); }
+  76% { transform: translateX(76vw) translateY(0); }
+  88% { transform: translateX(88vw) translateY(-3px); }
+  100% { transform: translateX(calc(100vw + 120px)) translateY(0); }
+}
+@keyframes pasitos { from { translate: 0 0; rotate: -4deg; } to { translate: 0 -3px; rotate: 4deg; } }
+@media (prefers-reduced-motion: reduce) {
+  .gallina-paseante, .gallina-paseante .ave, .item-nuevo { animation: none !important; }
+}
+</style>
+</head>
+<body>
+<h1>🐔 Mis Gallinas</h1>
+
+<div class="nube-bar">
+  <span id="nubeEstado">☁️ Solo en este dispositivo</span>
+  <button type="button" id="nubeBtn" style="display:none;">Iniciar sesión</button>
+</div>
+
+<div class="periodo">
+  <label for="periodo">📅 Periodo</label>
+  <select id="periodo" onchange="actualizar()"></select>
+</div>
+
+<div class="grid">
+  <div class="box"><small>Ventas</small><div class="num" id="tIngresos" style="color:#10b981;">0,00 €</div></div>
+  <div class="box"><small>Gastos</small><div class="num" id="tGastos" style="color:#ef4444;">0,00 €</div></div>
+  <div class="box"><small>Balance</small><div class="num" id="tBalance">0,00 €</div></div>
+</div>
+
+<div class="card" id="cardVenta">
+  <h2 id="tituloVenta">🥚 Nueva Venta</h2>
+  <label for="vFecha">Fecha</label>
+  <input type="date" id="vFecha">
+  <label for="vCliente">Nombre del cliente</label>
+  <input type="text" id="vCliente" placeholder="Ej: María" list="listaClientes" autocomplete="off">
+  <datalist id="listaClientes"></datalist>
+  <div class="row2">
+    <div>
+      <label for="vDocenas">Docenas</label>
+      <input type="number" step="any" min="0" inputmode="decimal" id="vDocenas" placeholder="Ej: 2 o 2.5" oninput="calcular()">
+    </div>
+    <div>
+      <label for="vPrecio">€ por docena</label>
+      <input type="number" step="any" min="0" inputmode="decimal" id="vPrecio" value="3" oninput="calcular()">
+    </div>
+  </div>
+  <label for="vTotal">Total a cobrar (€)</label>
+  <input type="number" step="any" min="0" inputmode="decimal" id="vTotal" placeholder="0.00" style="background:#f3f4f6;font-weight:bold;">
+  <button type="button" id="btnVenta" onclick="registrarVenta()">Registrar Venta</button>
+  <button type="button" class="btn-cancelar" id="cancelVenta" style="display:none;" onclick="cancelarEdicion()">Cancelar edición</button>
+</div>
+
+<div class="card" id="cardGasto">
+  <h2 id="tituloGasto">💸 Nuevo Gasto</h2>
+  <label for="gFecha">Fecha</label>
+  <input type="date" id="gFecha">
+  <label for="gTipo">Tipo de gasto</label>
+  <select id="gTipo">
+    <option value="Pienso">Pienso</option>
+    <option value="Fruta">Fruta</option>
+    <option value="Verdura">Verdura</option>
+    <option value="Gasolina">Gasolina</option>
+    <option value="Viruta de madera">Viruta de madera</option>
+    <option value="Otro">Otro</option>
+  </select>
+  <label for="gImporte">Importe (€)</label>
+  <input type="number" step="any" min="0" inputmode="decimal" id="gImporte" placeholder="Ej: 15.00">
+  <button type="button" class="btn-gasto" id="btnGasto" onclick="registrarGasto()">Registrar Gasto</button>
+  <button type="button" class="btn-cancelar" id="cancelGasto" style="display:none;" onclick="cancelarEdicion()">Cancelar edición</button>
+</div>
+
+<div class="card">
+  <h2>📜 Historial</h2>
+  <div id="historial"></div>
+</div>
+
+<div class="card">
+  <h2>📊 Estadísticas por cliente</h2>
+  <p class="stat-note" style="margin:8px 0 12px;">Huevos pedidos por cada persona en el periodo elegido (incluye regalos). Cada docena son 12 huevos.</p>
+  <div id="estadisticas"></div>
+</div>
+
+<div class="card">
+  <h2>💾 Copia de seguridad</h2>
+  <p style="margin:8px 0;color:#4b5563;font-size:14px;line-height:1.45;">
+    Guarda tus ventas y gastos en un archivo para recuperarlos si cambias de teléfono.
+  </p>
+  <button type="button" class="btn-secundario" style="background:#15803d;" onclick="exportarBackup()">💾 Crear copia de seguridad</button>
+  <p style="margin:8px 0 0;color:#6b7280;font-size:12px;line-height:1.4;">
+    Se descarga <strong>copia_gallinas_fecha.json</strong>. Guárdalo en Descargas, Drive o envíatelo por correo.
+  </p>
+  <button type="button" class="btn-secundario" style="background:#0284c7;" onclick="document.getElementById('importFile').click()">📂 Restaurar copia (se combina con lo actual)</button>
+  <input type="file" id="importFile" accept=".json,application/json" style="display:none;" onchange="importarBackup(event)">
+  <button type="button" class="btn-secundario" onclick="exportarCSV()">📑 Exportar a CSV (Excel)</button>
+</div>
+
+<div id="modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fffdf5;border-radius:14px;padding:18px;max-width:340px;width:100%;box-shadow:0 10px 30px rgba(0,0,0,.4);">
+    <p id="modalMsg" style="margin:0 0 6px;line-height:1.45;"></p>
+    <div class="row2">
+      <div><button type="button" class="btn-cancelar" id="modalNo">Cancelar</button></div>
+      <div><button type="button" id="modalSi">Aceptar</button></div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" role="status" aria-live="polite"><span id="toastMsg"></span><button type="button" id="toastBtn" style="display:none;">Deshacer</button></div>
+
+<script>
+const KEY = 'gallinas_v3';   // misma clave que antes: tus datos actuales se conservan
+let editando = null;         // id del movimiento que se está editando
+let avisoGuardadoMostrado = false;
+let ultimoId = null;
+
+/* ---------- Utilidades ---------- */
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+function euros(n) { return Number(n).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'; }
+function formatoNumero(n) { return Number(Number(n).toFixed(2)).toLocaleString('es-ES', { maximumFractionDigits: 2 }); }
+function hoyLocal() {
+  const h = new Date();
+  return new Date(h.getTime() - h.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+}
+function fechaCorta(f) {
+  const p = String(f || '').split('-');
+  return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : String(f || '');
+}
+function nombreMes(clave) {
+  const [y, m] = clave.split('-').map(Number);
+  const t = new Date(y, m - 1, 1).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+function firma(it) { return [it.tipo, it.fecha, it.desc, it.monto].join('|'); }
+
+/* ---------- Datos ---------- */
+/* Cada movimiento lleva id único, fecha de última modificación (upd) y marca de borrado (del).
+   Eso permite combinar copias y, más adelante, sincronizar con una base de datos online. */
+function normalizar(x) {
+  if (!x || typeof x !== 'object') return null;
+  if (x.tipo !== 'v' && x.tipo !== 'g') return null;
+  const monto = Number(x.monto);
+  if (!Number.isFinite(monto) || monto < 0) return null;
+  const o = { ...x, monto, fecha: String(x.fecha || ''), desc: String(x.desc || '') };
+  if (!o.id) o.id = uid();
+  o.upd = Number(o.upd) || 0;
+  o.del = !!o.del;
+  if (o.tipo === 'v') {
+    // Ventas antiguas: recuperar cliente y docenas desde la descripción.
+    let docenas = Number(o.docenas);
+    if (!o.cliente || !Number.isFinite(docenas) || docenas <= 0) {
+      const m = o.desc.match(/^(.*?)\s*\((\d+(?:[.,]\d+)?)\s*doc\.\)/i);
+      if (m) {
+        if (!o.cliente) o.cliente = m[1].trim();
+        if (!Number.isFinite(docenas) || docenas <= 0) docenas = Number(m[2].replace(',', '.'));
+      }
+    }
+    o.docenas = Number.isFinite(docenas) && docenas > 0 ? docenas : 0;
+    o.regalo = o.regalo === true || /REGALO/.test(o.desc);
+  }
+  return o;
+}
+
+let db = (function () {
+  try {
+    const g = JSON.parse(localStorage.getItem(KEY) || '[]');
+    return Array.isArray(g) ? g.map(normalizar).filter(Boolean) : [];
+  } catch (e) { return []; }
+})();
+
+function guardar() {
+  try { localStorage.setItem(KEY, JSON.stringify(db)); }
+  catch (e) {
+    if (!avisoGuardadoMostrado) {
+      avisoGuardadoMostrado = true;
+      aviso('No se han podido guardar los datos en este navegador. Descarga una copia de seguridad.');
+    }
+  }
+}
+function vivos() { return db.filter(x => !x.del); }
+
+/* ---------- Puente con la nube (lo rellena el script de Firebase del final) ---------- */
+function subir(it) { if (window.nube && window.nube.subir) window.nube.subir(it); }
+
+/* Combina los movimientos que llegan de la nube con los locales.
+   Gana el más reciente (campo upd). Devuelve los locales que hay que subir. */
+function fusionarRemoto(remotos) {
+  const porId = new Map(db.map(x => [x.id, x]));
+  const idsRemotos = new Set();
+  const aSubir = [];
+  remotos.forEach(raw => {
+    const r = normalizar(raw);
+    if (!r) return;
+    idsRemotos.add(r.id);
+    const l = porId.get(r.id);
+    if (!l) { db.push(r); porId.set(r.id, r); }
+    else if (r.upd > l.upd) Object.assign(l, r);
+    else if (l.upd > r.upd) aSubir.push(l);
+  });
+  db.forEach(l => { if (!idsRemotos.has(l.id)) aSubir.push(l); });
+  actualizar();
+  return aSubir;
+}
+
+/* ---------- Formulario ---------- */
+function calcular() {
+  const doc = parseFloat(document.getElementById('vDocenas').value) || 0;
+  const pre = parseFloat(document.getElementById('vPrecio').value) || 0;
+  document.getElementById('vTotal').value = doc > 0 ? (doc * pre).toFixed(2) : '';
+}
+
+function leerVenta() {
+  const fecha = document.getElementById('vFecha').value;
+  const cliente = document.getElementById('vCliente').value.trim();
+  const docenas = parseFloat(document.getElementById('vDocenas').value) || 0;
+  const precioTxt = document.getElementById('vPrecio').value.trim();
+  const precio = precioTxt === '' ? NaN : parseFloat(precioTxt);
+  const totalTxt = document.getElementById('vTotal').value.trim();
+
+  if (!fecha) { aviso('Indica la fecha de la venta'); return null; }
+  if (!cliente) { aviso('Indica el nombre del cliente'); return null; }
+  if (!Number.isFinite(docenas) || docenas <= 0) { aviso('Indica un número válido de docenas'); return null; }
+  if (!Number.isFinite(precio) || precio < 0) { aviso('El precio por docena no es válido'); return null; }
+
+  const regalo = precio === 0;
+  const total = regalo ? 0 : (totalTxt !== '' ? parseFloat(totalTxt) : docenas * precio);
+
+  if (!regalo && (!Number.isFinite(total) || total <= 0)) {
+    aviso('El total no es válido. Comprueba el precio y el importe.');
+    return null;
+  }
+  return {
+    tipo: 'v', fecha, cliente, docenas, precio, regalo,
+    desc: regalo ? `${cliente} (${docenas} doc.) — REGALO` : `${cliente} (${docenas} doc.)`,
+    monto: Number(total.toFixed(2))
+  };
+}
+
+function registrarVenta() {
+  const datos = leerVenta();
+  if (!datos) return;
+  const terminar = () => {
+    guardarMovimiento(datos);
+    resetFormVenta();
+    toast(datos.regalo ? '🎁 Regalo registrado' : '✅ Venta registrada');
+  };
+  if (datos.regalo) {
+    preguntar(`Vas a regalar ${datos.docenas} docena(s) a ${datos.cliente}. El importe será 0,00 € y aparecerá como REGALO. ¿Quieres continuar?`, terminar);
+  } else {
+    terminar();
+  }
+}
+
+function registrarGasto() {
+  const fecha = document.getElementById('gFecha').value;
+  const tipo = document.getElementById('gTipo').value;
+  const importe = parseFloat(document.getElementById('gImporte').value);
+  if (!fecha) { aviso('Indica la fecha del gasto'); return; }
+  if (!Number.isFinite(importe) || importe <= 0) { aviso('Indica un importe válido'); return; }
+  guardarMovimiento({ tipo: 'g', fecha, gasto: tipo, desc: `Gasto: ${tipo}`, monto: Number(importe.toFixed(2)) });
+  resetFormGasto();
+  toast('✅ Gasto registrado');
+}
+
+function guardarMovimiento(datos) {
+  const ahora = Date.now();
+  if (editando) {
+    const it = db.find(x => x.id === editando);
+    if (it) { Object.assign(it, datos, { upd: ahora }); ultimoId = it.id; subir(it); }
+    editando = null;
+    toast('Cambios guardados');
+  } else {
+    const nuevo = { id: uid(), ...datos, upd: ahora, del: false };
+    db.push(nuevo);
+    ultimoId = nuevo.id;
+    subir(nuevo);
+  }
+  actualizar();
+}
+
+function resetFormVenta() {
+  document.getElementById('vCliente').value = '';
+  document.getElementById('vDocenas').value = '';
+  document.getElementById('vTotal').value = '';
+  document.getElementById('vPrecio').value = '3';
+  document.getElementById('vFecha').value = hoyLocal();
+  modoEdicion(false);
+}
+function resetFormGasto() {
+  document.getElementById('gImporte').value = '';
+  document.getElementById('gFecha').value = hoyLocal();
+  modoEdicion(false);
+}
+function modoEdicion(si, tipo) {
+  const v = si && tipo === 'v', g = si && tipo === 'g';
+  document.getElementById('tituloVenta').textContent = v ? '✏️ Editar venta' : '🥚 Nueva Venta';
+  document.getElementById('btnVenta').textContent = v ? 'Guardar cambios' : 'Registrar Venta';
+  document.getElementById('cancelVenta').style.display = v ? 'block' : 'none';
+  document.getElementById('tituloGasto').textContent = g ? '✏️ Editar gasto' : '💸 Nuevo Gasto';
+  document.getElementById('btnGasto').textContent = g ? 'Guardar cambios' : 'Registrar Gasto';
+  document.getElementById('cancelGasto').style.display = g ? 'block' : 'none';
+}
+function cancelarEdicion() {
+  editando = null;
+  resetFormVenta();
+  resetFormGasto();
+}
+
+function editar(id) {
+  const it = db.find(x => x.id === id);
+  if (!it) return;
+  editando = id;
+  if (it.tipo === 'v') {
+    document.getElementById('vFecha').value = it.fecha;
+    document.getElementById('vCliente').value = it.cliente || '';
+    document.getElementById('vDocenas').value = it.docenas || '';
+    const precio = Number.isFinite(Number(it.precio)) && it.precio !== undefined
+      ? Number(it.precio)
+      : (it.regalo ? 0 : (it.docenas > 0 ? Number((it.monto / it.docenas).toFixed(2)) : 3));
+    document.getElementById('vPrecio').value = precio;
+    document.getElementById('vTotal').value = it.monto.toFixed(2);
+    modoEdicion(true, 'v');
+    document.getElementById('cardVenta').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } else {
+    document.getElementById('gFecha').value = it.fecha;
+    const tipo = it.gasto || String(it.desc).replace(/^Gasto:\s*/, '');
+    const sel = document.getElementById('gTipo');
+    sel.value = Array.from(sel.options).some(o => o.value === tipo) ? tipo : 'Otro';
+    document.getElementById('gImporte').value = it.monto.toFixed(2);
+    modoEdicion(true, 'g');
+    document.getElementById('cardGasto').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+function eliminar(id) {
+  const it = db.find(x => x.id === id);
+  if (!it) return;
+  it.del = true; it.upd = Date.now(); subir(it);
+  if (editando === id) cancelarEdicion();
+  actualizar();
+  toast('Movimiento borrado', 'Deshacer', () => {
+    it.del = false; it.upd = Date.now(); subir(it);
+    ultimoId = it.id;
+    actualizar();
+  });
+}
+
+/* ---------- Aviso con "Deshacer" ---------- */
+let toastTimer = null;
+function aviso(msg) { toast(msg, null, null, 6000); }
+
+/* Confirmación propia (no depende de confirm(), que algunos visores bloquean). */
+function preguntar(msg, siAcepta) {
+  const m = document.getElementById('modal');
+  document.getElementById('modalMsg').textContent = msg;
+  m.style.display = 'flex';
+  const cerrar = () => { m.style.display = 'none'; };
+  document.getElementById('modalSi').onclick = () => { cerrar(); siAcepta(); };
+  document.getElementById('modalNo').onclick = cerrar;
+}
+
+function toast(msg, textoBoton, accion, ms) {
+  const t = document.getElementById('toast');
+  const b = document.getElementById('toastBtn');
+  document.getElementById('toastMsg').textContent = msg;
+  if (textoBoton) {
+    b.style.display = 'inline-block';
+    b.textContent = textoBoton;
+    b.onclick = () => { t.classList.remove('visible'); accion(); };
+  } else {
+    b.style.display = 'none';
+  }
+  t.classList.add('visible');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('visible'), ms || (textoBoton ? 7000 : 2500));
+}
+
+/* ---------- Copias de seguridad ---------- */
+function descargar(nombre, contenido, tipo) {
+  const blob = new Blob([contenido], { type: tipo });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = nombre; a.style.display = 'none';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+
+function exportarBackup() {
+  const datos = vivos();
+  if (!datos.length) { aviso('Todavía no hay ventas ni gastos guardados.'); return; }
+  const nombre = `copia_gallinas_${hoyLocal()}.json`;
+  descargar(nombre, JSON.stringify(datos, null, 2), 'application/json;charset=utf-8');
+  aviso('Copia preparada: ' + nombre + '\n\nBúscala en Descargas. Si el teléfono pregunta dónde guardarla, elige una carpeta fácil de encontrar.');
+}
+
+function exportarCSV() {
+  const datos = vivos().slice().sort((a, b) => a.fecha.localeCompare(b.fecha));
+  if (!datos.length) { aviso('Todavía no hay movimientos.'); return; }
+  const celda = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  const filas = [['Fecha', 'Tipo', 'Cliente', 'Docenas', 'Concepto', 'Importe (€)']];
+  datos.forEach(i => filas.push([
+    i.fecha,
+    i.tipo === 'v' ? (i.regalo ? 'Regalo' : 'Venta') : 'Gasto',
+    i.cliente || '',
+    i.tipo === 'v' ? String(i.docenas).replace('.', ',') : '',
+    i.desc,
+    (i.tipo === 'v' ? '' : '-') + i.monto.toFixed(2).replace('.', ',')
+  ]));
+  const csv = '\uFEFF' + filas.map(f => f.map(celda).join(';')).join('\r\n');
+  descargar(`gallinas_${hoyLocal()}.csv`, csv, 'text/csv;charset=utf-8');
+}
+
+function importarBackup(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    try {
+      const datos = JSON.parse(e.target.result);
+      if (!Array.isArray(datos) || !datos.length || !datos.every(x => normalizar(x))) {
+        aviso('El archivo no tiene un formato válido.');
+        return;
+      }
+      preguntar(`La copia tiene ${datos.length} movimientos. Se combinarán con los actuales (no se borra nada ni se duplica). ¿Continuar?`, () => combinarCopia(datos));
+    } catch (err) {
+      aviso('Error al leer el archivo de copia de seguridad.');
+    } finally {
+      event.target.value = '';
+    }
+  };
+  reader.readAsText(file);
+}
+
+function combinarCopia(datos) {
+  try {
+      const porId = new Map(db.map(x => [x.id, x]));
+      const firmas = new Set(db.map(firma));
+      let nuevos = 0;
+      datos.forEach(raw => {
+        const sinId = !raw.id;
+        const it = normalizar(raw);
+        if (sinId && firmas.has(firma(it))) return;      // copia antigua: evitar duplicados
+        const existente = porId.get(it.id);
+        if (!existente) { db.push(it); porId.set(it.id, it); firmas.add(firma(it)); nuevos++; subir(it); }
+        else if (it.upd > existente.upd) { Object.assign(existente, it); subir(existente); }
+      });
+      actualizar();
+      aviso(nuevos ? `¡Copia restaurada! Se han añadido ${nuevos} movimientos.` : 'La copia ya estaba incluida: no había nada nuevo que añadir.');
+  } catch (err) {
+      aviso('Error al combinar la copia de seguridad.');
+  }
+}
+
+/* ---------- Pantalla ---------- */
+function actualizarPeriodos() {
+  const sel = document.getElementById('periodo');
+  const actual = sel.value || 'todo';
+  const meses = Array.from(new Set(vivos().map(x => x.fecha.slice(0, 7)).filter(Boolean))).sort().reverse();
+  sel.innerHTML = '<option value="todo">Todo el historial</option>' +
+    meses.map(m => `<option value="${esc(m)}">${esc(nombreMes(m))}</option>`).join('');
+  sel.value = (actual === 'todo' || meses.includes(actual)) ? actual : 'todo';
+}
+
+function actualizar() {
+  guardar();
+  actualizarPeriodos();
+  const periodo = document.getElementById('periodo').value;
+  const lista = vivos()
+    .filter(x => periodo === 'todo' || x.fecha.slice(0, 7) === periodo)
+    .sort((a, b) => b.fecha.localeCompare(a.fecha) || b.upd - a.upd);
+
+  let ingresos = 0, gastos = 0, html = '';
+  lista.forEach(item => {
+    if (item.tipo === 'v') ingresos += item.monto; else gastos += item.monto;
+    const regalo = item.tipo === 'v' && item.regalo;
+    const color = regalo ? '#92400e' : (item.tipo === 'v' ? '#10b981' : '#ef4444');
+    const signo = item.tipo === 'v' ? '+' : '-';
+    const importe = regalo ? '🎁 0,00 €' : `${signo}${euros(item.monto)}`;
+    html += `<div class="item${item.id === ultimoId ? ' item-nuevo' : ''}">
+      <div><small>${esc(fechaCorta(item.fecha))}</small><br><strong>${esc(item.desc)}</strong></div>
+      <div class="acciones">
+        <strong style="color:${color};margin-right:4px;white-space:nowrap;">${importe}</strong>
+        <button class="icon-btn" type="button" aria-label="Editar movimiento" onclick="editar('${item.id}')">✏️</button>
+        <button class="icon-btn del" type="button" aria-label="Eliminar movimiento" onclick="eliminar('${item.id}')">&times;</button>
+      </div>
+    </div>`;
+  });
+  ultimoId = null;
+
+  document.getElementById('tIngresos').textContent = euros(ingresos);
+  document.getElementById('tGastos').textContent = euros(gastos);
+  const balance = ingresos - gastos;
+  const balEl = document.getElementById('tBalance');
+  balEl.textContent = euros(balance);
+  balEl.style.color = balance >= 0 ? '#10b981' : '#ef4444';
+  document.getElementById('historial').innerHTML = html || '<small style="color:#9ca3af">Sin movimientos</small>';
+
+  actualizarClientes();
+  actualizarEstadisticas(lista);
+}
+
+function actualizarClientes() {
+  const nombres = new Set();
+  vivos().forEach(x => { if (x.tipo === 'v' && x.cliente) nombres.add(x.cliente); });
+  document.getElementById('listaClientes').innerHTML =
+    Array.from(nombres).sort((a, b) => a.localeCompare(b, 'es')).map(n => `<option value="${esc(n)}">`).join('');
+}
+
+function actualizarEstadisticas(lista) {
+  const porCliente = new Map();
+  lista.filter(x => x.tipo === 'v' && x.cliente && x.docenas > 0).forEach(x => {
+    const clave = x.cliente.toLocaleLowerCase('es');
+    const ant = porCliente.get(clave) || { nombre: x.cliente, docenas: 0 };
+    ant.docenas += x.docenas;
+    porCliente.set(clave, ant);
+  });
+
+  const datos = Array.from(porCliente.values()).sort((a, b) => b.docenas - a.docenas);
+  const cont = document.getElementById('estadisticas');
+  if (!datos.length) {
+    cont.innerHTML = '<small style="color:#9ca3af">No hay ventas con cliente y docenas en este periodo.</small>';
+    return;
+  }
+  const maxHuevos = Math.max(...datos.map(c => c.docenas * 12));
+  const totalDocenas = datos.reduce((s, c) => s + c.docenas, 0);
+  let html = `<div style="background:#fffbeb;border-radius:10px;padding:10px;margin-bottom:14px;display:flex;justify-content:space-around;gap:8px;text-align:center;">
+    <div><small style="color:#6b7280">Clientes</small><div style="font-size:20px;font-weight:bold;color:#92400e">${datos.length}</div></div>
+    <div><small style="color:#6b7280">Docenas</small><div style="font-size:20px;font-weight:bold;color:#92400e">${formatoNumero(totalDocenas)}</div></div>
+    <div><small style="color:#6b7280">Huevos</small><div style="font-size:20px;font-weight:bold;color:#92400e">${formatoNumero(totalDocenas * 12)}</div></div>
+  </div>`;
+  datos.forEach(c => {
+    const huevos = c.docenas * 12;
+    html += `<div class="stat-row">
+      <div class="stat-head"><span class="stat-name">${esc(c.nombre)}</span><span class="stat-number">${formatoNumero(huevos)} huevos</span></div>
+      <div class="stat-track"><div class="stat-bar" style="width:${Math.max(2, huevos / maxHuevos * 100)}%"></div></div>
+      <div class="stat-note">${formatoNumero(c.docenas)} docenas en total</div>
+    </div>`;
+  });
+  cont.innerHTML = html;
+}
+
+/* ---------- Inicio ---------- */
+document.getElementById('vFecha').value = hoyLocal();
+document.getElementById('gFecha').value = hoyLocal();
+actualizar();
+
+/* Gallinitas que cruzan la pantalla de vez en cuando */
+(function animarGallinero() {
+  const aves = ['🐔', '🐓', '🐤', '🐥'];
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  function paseo() {
+    if (document.querySelectorAll('.gallina-paseante').length >= 2) return;
+    const c = document.createElement('div');
+    c.className = 'gallina-paseante';
+    if (Math.random() > 0.5) c.classList.add('reversa');
+    const ave = document.createElement('span');
+    ave.className = 'ave';
+    ave.textContent = aves[Math.floor(Math.random() * aves.length)];
+    c.appendChild(ave);
+    const dur = 15 + Math.random() * 12;
+    c.style.setProperty('--duracion', dur + 's');
+    c.style.bottom = (10 + Math.floor(Math.random() * 55)) + 'px';
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), (dur + 1) * 1000);
+  }
+  setTimeout(() => {
+    paseo();
+    setInterval(() => { if (Math.random() < 0.78) paseo(); }, 12000);
+  }, 5000);
+})();
+</script>
+
+<!-- Sincronización con Firebase. Si falla (sin internet, navegador antiguo...), la página sigue funcionando solo en este dispositivo. -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-auth.js";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAQaKUrMUhEb4qxFubHhS7AS8o9pM1KKXM",
+  authDomain: "mis-gallinas-983.firebaseapp.com",
+  projectId: "mis-gallinas-983",
+  storageBucket: "mis-gallinas-983.firebasestorage.app",
+  messagingSenderId: "243899552283",
+  appId: "1:243899552283:web:3dbfe4a4eaeae952a61ebe"
+};
+
+const elEstado = document.getElementById('nubeEstado');
+const elBtn = document.getElementById('nubeBtn');
+const estado = t => { elEstado.textContent = t; };
+
+try {
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const fs = initializeFirestore(app, {
+    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+  });
+
+  let uid = null;
+  let desuscribir = null;
+
+  function subirItem(it) {
+    if (!uid) return;
+    try {
+      const limpio = JSON.parse(JSON.stringify(it));   // quita campos undefined
+      setDoc(doc(fs, 'users', uid, 'movs', it.id), limpio)
+        .catch(e => estado('⚠️ No se pudo subir: ' + (e.code || e.message)));
+    } catch (e) { estado('⚠️ No se pudo subir: ' + e.message); }
+  }
+  window.nube = { subir: subirItem };
+
+  elBtn.style.display = 'inline-block';
+  elBtn.textContent = 'Iniciar sesión con Google';
+  estado('☁️ Solo en este dispositivo');
+
+  elBtn.onclick = async () => {
+    if (auth.currentUser) {
+      preguntar('¿Cerrar sesión? Tus datos se quedan en este dispositivo, pero dejarán de sincronizarse.', () => signOut(auth));
+      return;
+    }
+    try {
+      await signInWithPopup(auth, new GoogleAuthProvider());
+    } catch (e) {
+      const msgs = {
+        'auth/unauthorized-domain': 'Esta dirección web no está autorizada en Firebase (Authentication → Configuración → Dominios autorizados).',
+        'auth/operation-not-supported-in-this-environment': 'Abre la página desde su dirección web (https://), no desde un archivo guardado.',
+        'auth/popup-blocked': 'El navegador ha bloqueado la ventana de Google. Permite las ventanas emergentes y reinténtalo.',
+        'auth/network-request-failed': 'Sin conexión a internet.'
+      };
+      if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') return;
+      aviso(msgs[e.code] || ('No se pudo iniciar sesión: ' + (e.code || e.message)));
+    }
+  };
+
+  onAuthStateChanged(auth, user => {
+    if (desuscribir) { desuscribir(); desuscribir = null; }
+    if (!user) {
+      uid = null;
+      elBtn.textContent = 'Iniciar sesión con Google';
+      estado('☁️ Solo en este dispositivo');
+      return;
+    }
+    uid = user.uid;
+    elBtn.textContent = 'Cerrar sesión';
+    estado('☁️ Conectando…');
+    desuscribir = onSnapshot(
+      collection(fs, 'users', uid, 'movs'),
+      { includeMetadataChanges: true },
+      snap => {
+        const remotos = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+        fusionarRemoto(remotos).forEach(subirItem);
+        if (snap.metadata.hasPendingWrites) estado('☁️ Subiendo cambios…');
+        else if (snap.metadata.fromCache) estado('☁️ Sin conexión: se subirá al volver · ' + (user.email || ''));
+        else estado('☁️ Sincronizado · ' + (user.email || ''));
+      },
+      err => estado(err.code === 'permission-denied'
+        ? '⚠️ Sin permiso: revisa las reglas de Firestore'
+        : '⚠️ Error de sincronización: ' + (err.code || err.message))
+    );
+  });
+} catch (e) {
+  estado('☁️ Nube no disponible: solo este dispositivo');
+}
+</script>
+</body>
+</html>
